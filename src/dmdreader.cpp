@@ -277,7 +277,9 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
 
   spi_send_blocking((uint32_t *)&h, sizeof(h));
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
+  delay(1);
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
+  delay(1);
   start_spi();
 
   return true;
