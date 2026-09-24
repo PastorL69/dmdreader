@@ -162,7 +162,7 @@ Color monochromeColor;
 void spi_send_dma(uint32_t *buf, uint16_t len) {
   spi_dma_running = true;
   // SET DMA source address and immediately start transfer
-  dma_channel_transfer_from_buffer_now(spi_dma_channel, buf, len / 4)
+  dma_channel_transfer_from_buffer_now(spi_dma_channel, buf, len / 4);
 }
 
 /**
