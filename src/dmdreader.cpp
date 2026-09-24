@@ -164,6 +164,7 @@ void spi_send_dma(uint32_t *buf, uint16_t len) {
   // SET DMA source address and immediately start transfer
   dma_channel_set_read_addr(spi_dma_channel, buf, false);
   dma_channel_set_trans_count(spi_dma_channel, len / 4, true);
+  dma
 }
 
 /**
@@ -174,6 +175,7 @@ void spi_send_dma(uint32_t *buf, uint16_t len) {
  */
 void spi_send_blocking(uint32_t *buf, uint16_t len) {
   for (uint16_t i = 0; i < len; i += 4) {
+    delay(1);
     pio_sm_put_blocking(spi_pio, spi_sm, *buf);
     buf++;
   }
@@ -277,9 +279,7 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
 
   spi_send_blocking((uint32_t *)&h, sizeof(h));
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
-  delay(1);
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
-  delay(1);
   start_spi();
 
   return true;
