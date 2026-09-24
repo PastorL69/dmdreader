@@ -269,10 +269,10 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
     if (spi_busy()) return false;
   }
 
-  Serial.printf("length = %d\n", h.len);
-  Serial.printf("columns = %d\n", ph.columns);
-  Serial.printf("rows = %d\n", ph.rows);
-  Serial.printf("bpp = %d\n", ph.bitsperpixel);
+  // Serial.printf("length = %d\n", h.len);
+  // Serial.printf("columns = %d\n", ph.columns);
+  // Serial.printf("rows = %d\n", ph.rows);
+  // Serial.printf("bpp = %d\n", ph.bitsperpixel);
 
   pio_sm_put_blocking(spi_pio, spi_sm, 1000);
   //spi_send_blocking((uint32_t *)&h, sizeof(h));
