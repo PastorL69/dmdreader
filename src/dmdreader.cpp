@@ -175,6 +175,7 @@ void spi_send_blocking(uint32_t *buf, uint16_t len) {
   for (uint16_t i = 0; i < len; i += 4) {
     pio_sm_put_blocking(spi_pio, spi_sm, *buf);
     buf++;
+    Serial.printf("sent some bitties.");
   }
 }
 
@@ -269,11 +270,13 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
     if (spi_busy()) return false;
   }
 
-  // Serial.printf("length = %d\n", h.len);
-  // Serial.printf("columns = %d\n", ph.columns);
-  // Serial.printf("rows = %d\n", ph.rows);
-  // Serial.printf("bpp = %d\n", ph.bitsperpixel);
+  delay(2000);
+  Serial.printf("length = %d\n", h.len);
+  Serial.printf("columns = %d\n", ph.columns);
+  Serial.printf("rows = %d\n", ph.rows);
+  Serial.printf("bpp = %d\n", ph.bitsperpixel);
 
+  delay(5);
   //pio_sm_put_blocking(spi_pio, spi_sm, 1000);
   spi_send_blocking((uint32_t *)&h, sizeof(h));
   //spi_send_blocking((uint32_t *)&ph, sizeof(ph));
