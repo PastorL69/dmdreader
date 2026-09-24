@@ -173,7 +173,6 @@ void spi_send_dma(uint32_t *buf, uint16_t len) {
  */
 void spi_send_blocking(uint32_t *buf, uint16_t len) {
   for (uint16_t i = 0; i < len; i += 4) {
-    delay(1);
     pio_sm_put_blocking(spi_pio, spi_sm, *buf);
     buf++;
   }
@@ -275,9 +274,9 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
   Serial.printf("rows = %d\n", ph.rows);
   Serial.printf("bpp = %d\n", ph.bitsperpixel);
 
-  pio_sm_put_blocking(spi_pio, spi_sm, 0xcc33);
+  pio_sm_put_blocking(spi_pio, spi_sm, 1000);
   //spi_send_blocking((uint32_t *)&h, sizeof(h));
-  //spi_send_blocking((uint32_t *)&ph, sizeof(ph));
+  spi_send_blocking((uint32_t *)&ph, sizeof(ph));
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
   start_spi();
 
