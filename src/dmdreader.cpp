@@ -245,7 +245,7 @@ void spi_clean_exit() {
  */
 void spi_send_blocking(uint32_t *buf, uint16_t len) {
   for (uint16_t i = 0; i < len; i += 4) {
-    pio_sm_put(spi_pio, spi_sm, *buf);
+    pio_sm_put_blocking(spi_pio, spi_sm, *buf);
     buf++;
   }
 }

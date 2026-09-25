@@ -40,9 +40,9 @@ static inline void clocked_output_program_init(PIO pio, uint sm, uint offset, ui
     );
 
     // We only send, so disable the RX FIFO to make the TX FIFO deeper.
-    sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
+    //sm_config_set_fifo_join(&c, PIO_FIFO_JOIN_TX);
 
-    sm_config_set_clkdiv(&c,1);
+    //sm_config_set_clkdiv(&c,1);
 
     // Load our configuration, and start the program from the beginning
     pio_sm_init(pio, sm, offset, &c);
