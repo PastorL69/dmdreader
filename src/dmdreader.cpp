@@ -244,9 +244,9 @@ void spi_clean_exit() {
  * @param len
  */
 void spi_send_blocking(uint32_t *buf, uint16_t len) {
-  for (int i = 0; i < len; i += 4) {
-    pio_sm_put_blocking(spi_pio, spi_sm, buf[i+1]);
-    //buf++;
+  for (uint16_t i = 0; i < len; i += 4) {
+    pio_sm_put(spi_pio, spi_sm, *buf);
+    buf++;
   }
 }
 
@@ -270,13 +270,10 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
   }
 
   spi_send_blocking((uint32_t *)&h, sizeof(h));
-  delay(1000);
-  start_spi();
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
 
-  //dma_channel_wait_for_finish_blocking(spi_dma_channel);
-  //start_spi();
+  start_spi();
 
   return true;
 }
