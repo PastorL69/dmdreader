@@ -243,9 +243,10 @@ void spi_clean_exit() {
  * @param buf a byte buffer
  * @param len
  */
-void spi_send_blocking(uint32_t *buf, uint16_t len) {
-  for (uint16_t i = 0; i < len; i++) {
-    pio_sm_put_blocking(spi_pio, spi_sm, *buf++);
+void spi_send_blocking(volatile uint32_t *buf, uint16_t len) {
+  for (uint16_t i = 0; i < len; i += 4) {
+    pio_sm_put_blocking(spi_pio, spi_sm, *buf);
+    buf++;
   }
 }
 
