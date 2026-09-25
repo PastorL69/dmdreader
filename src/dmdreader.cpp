@@ -1588,6 +1588,7 @@ void dmdreader_spi_init() {
   dma_channel_set_irq1_enabled(spi_dma_channel, true);
   irq_set_exclusive_handler(DMA_IRQ_1, spi_dma_handler);
   irq_set_enabled(DMA_IRQ_1, true);
+  pio_sm_set_enabled(spi_pio, spi_sm, true);
 }
 
 bool dmdreader_spi_send(bool is_restarting) {
