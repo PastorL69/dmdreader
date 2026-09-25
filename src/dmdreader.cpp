@@ -243,7 +243,7 @@ void spi_clean_exit() {
  * @param buf a byte buffer
  * @param len
  */
-void __attribute__((noinline)) spi_send_blocking(uint32_t *buf, uint16_t len) {
+void spi_send_blocking(uint32_t *buf, uint16_t len) {
 
   __asm__ __volatile__("" ::: "memory");
   for (uint16_t i = 0; i < len; i += 4) {
