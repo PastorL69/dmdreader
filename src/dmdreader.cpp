@@ -172,10 +172,9 @@ void spi_send_dma(uint32_t *buf, uint16_t len) {
  * @param len
  */
 void spi_send_blocking(uint32_t *buf, uint16_t len) {
-  for (uint16_t i = 0; i < len; i += 4) {
-    pio_sm_put_blocking(spi_pio, spi_sm, *buf);
-    buf++;
-    delay(50);
+  uint16_t word_count = (len + 3) / 4;
+  for (uint16_t i = 0; i < word_count; i++) {
+      pio_sm_put_blocking(spi_pio, spi_sm, buf[i]);
   }
 }
 
@@ -270,7 +269,6 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
     if (spi_busy()) return false;
   }
 
-  //delay(2000);
   spi_send_blocking((uint32_t *)&h, sizeof(h));
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
