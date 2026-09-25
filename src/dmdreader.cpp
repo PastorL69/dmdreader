@@ -244,11 +244,8 @@ void spi_clean_exit() {
  * @param len
  */
 void spi_send_blocking(uint32_t *buf, uint16_t len) {
-  uint32_t test = buf[0];
-  Serial.printf("buffy: %d", test);
-  for (uint16_t i = 0; i < len; i += 4) {
-    pio_sm_put_blocking(spi_pio, spi_sm, *buf);
-    buf++;
+  for (uint16_t i = 0; i < len; i++) {
+    pio_sm_put_blocking(spi_pio, spi_sm, *buf++);
   }
 }
 
