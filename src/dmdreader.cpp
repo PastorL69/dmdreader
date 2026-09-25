@@ -274,6 +274,7 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
   pio_sm_put_blocking(spi_pio, spi_sm, 1001);
   //spi_send_blocking((uint32_t *)&ph, sizeof(ph));
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
+  
   dma_channel_wait_for_finish_blocking(spi_dma_channel);
   start_spi();
 
