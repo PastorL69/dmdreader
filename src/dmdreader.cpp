@@ -124,6 +124,10 @@ PIO spi_pio;
 uint spi_sm;
 uint spi_offset;
 
+PIO sub_pio;
+uint sub_sm;
+uint sub_offset;
+
 // DMD reader PIO
 PIO dmd_pio;
 uint dmd_sm;
@@ -273,7 +277,7 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
   spi_send_blocking((uint32_t *)&h, sizeof(h));
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
-  dma_channel_wait_for_finish_blocking(spi_dma_channel);
+  //dma_channel_wait_for_finish_blocking(spi_dma_channel);
   start_spi();
 
   return true;
@@ -300,8 +304,8 @@ void spi_dma_handler() {
 void count_clock() {
   const uint pins[3] = {DOTCLK, RCLK, RDATA};
   // just make use of the already defined sms/offsets
-  uint *sms[3] = {&spi_sm, &dmd_sm, &frame_sm};
-  uint *offsets[3] = {&spi_offset, &dmd_offset, &frame_offset};
+  uint *sms[3] = {&sub_sm, &dmd_sm, &frame_sm};
+  uint *offsets[3] = {&sub_offset, &dmd_offset, &frame_offset};
 
   for (int i = 0; i < 3; i++) {
     pio_claim_free_sm_and_add_program_for_gpio_range(
@@ -315,8 +319,8 @@ void count_clock() {
 uint64_t read_clock_count() {
   uint32_t counts[3];
   // just make use of the already defined sms/offsets
-  uint *sms[3] = {&spi_sm, &dmd_sm, &frame_sm};
-  uint *offsets[3] = {&spi_offset, &dmd_offset, &frame_offset};
+  uint *sms[3] = {&sub_sm, &dmd_sm, &frame_sm};
+  uint *offsets[3] = {&sub_offset, &dmd_offset, &frame_offset};
 
   for (int i = 0; i < 3; i++) {
     pio_sm_exec(dmd_pio, *sms[i], pio_encode_in(pio_x, 32));
