@@ -177,7 +177,7 @@ void spi_send_blocking(uint32_t *buf, uint16_t len) {
     buf++;
     //Serial.printf("send bitties.");
   }
-  delay(1);
+  delay(50);
 }
 
 /**
