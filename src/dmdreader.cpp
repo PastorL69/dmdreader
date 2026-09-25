@@ -256,14 +256,20 @@ void spi_clean_exit() {
  * @param pixbuf a frame to send
  */
 bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
+  block_header_t h = {.block_type = SPI_BLOCK_PIX};
+  block_pix_header_t ph = {};
 
-  block_header_t h;
-  block_pix_header_t ph;
+  // round length to 4-byte blocks
+  h.len = (((target_bytes + 3) / 4) * 4) + sizeof(h) + sizeof(ph);
+  ph.columns = source_width;
+  ph.rows = source_height;
+  ph.bitsperpixel = target_bitsperpixel;
 
   if (skip_when_busy) {
     if (spi_busy()) return false;
   }
 
+  delay(2000);
   spi_send_blocking((uint32_t *)&h, sizeof(h));
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
@@ -1494,14 +1500,6 @@ bool dmdreader_init(bool return_on_no_detection) {
       source_dwordsperframe /= 2;
       source_dwordsperplane /= 2;
   }
-
-  // Setup the pixel header for the SPI usecase
-  block_pix_header_t ph = {.columns = source_width,
-                           .rows = source_height,
-                           .bitsperpixel = target_bitsperpixel};
-  block_header_t h = {
-      .block_type = SPI_BLOCK_PIX,
-      .len = (((target_bytes + 3) / 4) * 4) + sizeof(h) + sizeof(ph)};
 
   // DMA for DMD reader
   dmd_dma_channel = dma_claim_unused_channel(true);
