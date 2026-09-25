@@ -171,10 +171,11 @@ void spi_send_dma(uint32_t *buf, uint16_t len) {
  * @param buf a byte buffer
  * @param len
  */
-void spi_send_blocking(uint32_t *buf, uint16_t len) {
-  uint16_t word_count = (len + 3) / 4;
-  for (uint16_t i = 0; i < word_count; i++) {
-      pio_sm_put_blocking(spi_pio, spi_sm, buf[i]);
+static inline __attribute__((always_inline)) void spi_send_blocking(
+    uint32_t *buf, uint16_t len) {
+  for (uint16_t i = 0; i < len; i += 4) {
+    pio_sm_put_blocking(spi_pio, spi_sm, *buf);
+    buf++;
   }
 }
 
