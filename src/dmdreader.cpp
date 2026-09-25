@@ -172,9 +172,9 @@ void spi_send_dma(uint32_t *buf, uint16_t len) {
  * @return false if there is no data in the TX FIFO
  */
 bool spi_busy() {
-  // if (!(pio_sm_is_tx_fifo_empty(spi_pio, spi_sm))) {
-  //   return true;
-  // }
+  if (!(pio_sm_is_tx_fifo_empty(spi_pio, spi_sm))) {
+    return true;
+  }
 
   if (dma_channel_is_busy(spi_dma_channel)) {
     return true;
@@ -247,7 +247,6 @@ void spi_send_blocking(uint32_t *buf, uint16_t len) {
   for (uint16_t i = 0; i < len; i += 4) {
     pio_sm_put_blocking(spi_pio, spi_sm, *buf);
     buf++;
-    //Serial.printf("debug");
   }
 }
 
@@ -271,9 +270,6 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
   }
 
   spi_send_blocking((uint32_t *)&h, sizeof(h));
-  //pio_sm_put_blocking(spi_pio, spi_sm, 1001);
-  //uint32_t word = pio_sm_get_blocking(spi_pio, spi_sm);
-  //Serial.printf("word: ", word);
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
 
@@ -1593,7 +1589,6 @@ void dmdreader_spi_init() {
   dma_channel_set_irq1_enabled(spi_dma_channel, true);
   irq_set_exclusive_handler(DMA_IRQ_1, spi_dma_handler);
   irq_set_enabled(DMA_IRQ_1, true);
-  pio_sm_drain_tx_fifo(spi_pio, spi_sm);
 }
 
 bool dmdreader_spi_send(bool is_restarting) {
