@@ -166,20 +166,6 @@ void spi_send_dma(uint32_t *buf, uint16_t len) {
 }
 
 /**
- * @brief Send data via SPI, using blocking IO
- *
- * @param buf a byte buffer
- * @param len
- */
-void spi_send_blocking(uint32_t *buf, uint16_t len) {
-  for (uint16_t i = 0; i < len; i += 4) {
-    pio_sm_put_blocking(spi_pio, spi_sm, *buf);
-    buf++;
-    Serial.printf("debug");
-  }
-}
-
-/**
  * @brief Check if there is still an active SPI data transfer
  *
  * @return true if there is still data in the TX FIFO
@@ -252,6 +238,20 @@ void spi_clean_exit() {
 }
 
 /**
+ * @brief Send data via SPI, using blocking IO
+ *
+ * @param buf a byte buffer
+ * @param len
+ */
+void spi_send_blocking(uint32_t *buf, uint16_t len) {
+  for (uint16_t i = 0; i < len; i += 4) {
+    pio_sm_put_blocking(spi_pio, spi_sm, *buf);
+    buf++;
+    //Serial.printf("debug");
+  }
+}
+
+/**
  * @brief Send a pix buffer via SPI
  *
  * @param pixbuf a frame to send
@@ -271,8 +271,8 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
   }
 
   spi_send_blocking((uint32_t *)&h, sizeof(h));
-  spi_send_blocking((uint32_t *)&ph, sizeof(ph));
-  spi_send_dma((uint32_t *)pixbuf, target_bytes);
+  // spi_send_blocking((uint32_t *)&ph, sizeof(ph));
+  // spi_send_dma((uint32_t *)pixbuf, target_bytes);
   start_spi();
 
   return true;
