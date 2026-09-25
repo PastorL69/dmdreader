@@ -270,14 +270,12 @@ bool spi_send_pix(uint8_t *pixbuf, bool skip_when_busy) {
   }
 
   spi_send_blocking((uint32_t *)&h, sizeof(h));
+  start_spi();
   spi_send_blocking((uint32_t *)&ph, sizeof(ph));
-  while(!pio_sm_is_tx_fifo_empty(spi_pio, spi_sm)) {
-    tight_loop_contents();
-  }
   spi_send_dma((uint32_t *)pixbuf, target_bytes);
 
   //dma_channel_wait_for_finish_blocking(spi_dma_channel);
-  start_spi();
+  //start_spi();
 
   return true;
 }
