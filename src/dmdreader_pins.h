@@ -28,9 +28,9 @@
 
 // SPI Defines
 #define SPI0 spi0
-#define SPI_BASE 16
+#define SPI_BASE 12
 #define SPI0_MISO SPI_BASE        // 16
-#define SPI0_CS (SPI_BASE + 1)    // 17
+#define SPI0_CS 17    // 17
 #define SPI0_SCK (SPI_BASE + 2)   // 18
 #define SPI0_MOSI (SPI_BASE + 3)  // 19
 
