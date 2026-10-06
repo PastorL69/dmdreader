@@ -1558,6 +1558,13 @@ void dmdreader_spi_init() {
   pinMode(DMDREADER_SPI_CS, OUTPUT);
   digitalWrite(DMDREADER_SPI_CS, LOW);
 
+  // SCK = pin_spi_base + 2 (input): bypass the synchronizer
+  hw_set_bits(&spi_pio->input_sync_bypass, 1u << (DMDREADER_SPI_BASE + 2));
+
+  // MISO = pin_spi_base + 0 (the OUT pin): drive strength and slew
+  gpio_set_drive_strength(DMDREADER_SPI_BASE, GPIO_DRIVE_STRENGTH_12MA);
+  gpio_set_slew_rate(DMDREADER_SPI_BASE, GPIO_SLEW_RATE_FAST);
+
   // Set up SPI header
   h.len = (((target_bytes + 3) / 4) * 4) + sizeof(h) + sizeof(ph);
   h.block_type = SPI_BLOCK_PIX;
