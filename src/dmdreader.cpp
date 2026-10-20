@@ -634,8 +634,10 @@ void dmd_dma_reset() {
  *
  */
 void dmd_prepare_dma_sniffer() {
-  dma_channel_transfer_from_buffer_now(dma_sniff_channel, current_framebuf,
-                                       loopback ? source_bytes : target_bytes);
+  // 32 bit transfers, all frame sizes are a multiple of 4 bytes
+  dma_channel_transfer_from_buffer_now(
+      dma_sniff_channel, current_framebuf,
+      (loopback ? source_bytes : target_bytes) / 4);
   dma_channel_wait_for_finish_blocking(
       dma_sniff_channel);  // waiting is required.
 }
@@ -683,21 +685,30 @@ void dmd_dma_handler() {
   // Get a 32bit pointer to the frame buffer to handle more pixels at once.
   uint32_t *framebuf = (uint32_t *)processingbuf;
 
-  bool source_shiftplanesatmerge = (source_mergeplanes == MERGEPLANES_ADDSHIFT);
+  // Evaluate the settings once per frame instead of for every pixel.
+  const bool shift_up =
+      source_mergeplanes == MERGEPLANES_ADDSHIFT && dmd_type == DMD_SPIKE1;
+  const bool shift_down =
+      source_mergeplanes == MERGEPLANES_ADDSHIFT && dmd_type == DMD_SLEIC;
+  const bool is_x16 = dmd_type == DMD_DE_X16_V1 || dmd_type == DMD_DE_X16_V2;
+  const bool copy_pixval =
+      source_bitsperpixel == target_bitsperpixel || (loopback && !is_x16);
+  const bool convert_4bpp_to_2bpp =
+      4 == source_bitsperpixel && 2 == target_bitsperpixel;
 
   planebuf = (uint32_t *)currentPlaneBuffer;
   // px represents a group of pixels stored in a double word. 8 pixels of 4bit
   // or 16 pixels of 2bit depth.
   for (int px = 0; px < source_dwordsperplane; px++) {
     uint32_t pixval = 0;
+    const uint32_t *p = planebuf + px;
     for (int plane = 0; plane < source_planesperframe; plane++) {
-      uint32_t v = planebuf[offset[plane] + px];
-      if (source_shiftplanesatmerge) {
-        if (dmd_type == DMD_SPIKE1) {
-          v <<= plane;
-        } else if (dmd_type == DMD_SLEIC) {
-          v <<= (source_planesperframe - 1) - plane;
-        }
+      uint32_t v = *p;
+      p += source_dwordsperplane;  // same pixel in the next plane
+      if (shift_up) {
+        v <<= plane;
+      } else if (shift_down) {
+        v <<= (source_planesperframe - 1) - plane;
       }
       pixval += v;
     }
@@ -755,11 +766,10 @@ void dmd_dma_handler() {
       }
     }
 
-    if (source_bitsperpixel == target_bitsperpixel ||
-        (loopback && dmd_type != DMD_DE_X16_V1 && dmd_type != DMD_DE_X16_V2)) {
+    if (copy_pixval) {
       framebuf[px] = pixval;
-    } else if (4 == source_bitsperpixel && 2 == target_bitsperpixel) {
-      if (dmd_type != DMD_DE_X16_V1 && dmd_type != DMD_DE_X16_V2) {
+    } else if (convert_4bpp_to_2bpp) {
+      if (!is_x16) {
         uint32_t out = px >> 1;  // Shifting leads to index steps 0, 0, 1,
                                  // 1, 2, 2, 3, 3, 4, 4 ...
         uint16_t v16 = convert_4bit_to_2bit_fast(pixval);
@@ -797,7 +807,7 @@ void dmd_dma_handler() {
     locked_in = true;
   }
 
-  if (dmd_type == DMD_DE_X16_V1 || dmd_type == DMD_DE_X16_V2) {
+  if (is_x16) {
     // merge the rows and convert from 4bpp to 2bpp with a LUT
     uint32_t *dst, *src1, *src2;
     dst = framebuf + 64; // start in the middle of 128x32 frame
@@ -1527,7 +1537,7 @@ bool dmdreader_init(bool return_on_no_detection) {
   // CRC32 DMA sniffer for DMD reader
   dma_sniff_channel = dma_claim_unused_channel(true);
   dma_sniff_channel_cfg = dma_channel_get_default_config(dma_sniff_channel);
-  channel_config_set_transfer_data_size(&dma_sniff_channel_cfg, DMA_SIZE_8);
+  channel_config_set_transfer_data_size(&dma_sniff_channel_cfg, DMA_SIZE_32);
   channel_config_set_read_increment(&dma_sniff_channel_cfg, true);
   channel_config_set_write_increment(&dma_sniff_channel_cfg, false);
 
