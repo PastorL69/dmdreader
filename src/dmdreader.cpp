@@ -46,9 +46,9 @@ DmdType dmd_type;
 #define LINEOVERSAMPLING_4X 4
 
 // Merging multiple planes
-#define MERGEPLANES_NONE 0
 #define MERGEPLANES_ADD 0
 #define MERGEPLANES_ADDSHIFT 1
+#define MERGEPLANES_NONE 2  // only the newest plane is used
 
 // data buffer
 #define MAX_WIDTH 256
@@ -121,6 +121,7 @@ bool detected_1_0_0_0 = false;
 bool locked_in = false;
 bool plane0_shifted = false;
 bool loopback = false;
+bool x16_right_side = false;  // Data East 128x16: newest plane is right side
 
 // SPI PIO
 PIO spi_pio;
@@ -647,9 +648,10 @@ void dmd_prepare_dma_sniffer() {
 void dmd_dma_handler() {
   dmd_set_and_enable_new_dma_target();
 
-  if (dmd_type == DMD_DE_X16_V2) {
+  if (dmd_type == DMD_DE_X16_V2 && x16_right_side) {
     // Due to the complexity of x16 v2, we use this way to re-sync
     // if the signals are noisy, or whatever else could happen.
+    // Only after the right side, a frame always starts with the left side.
     pio_sm_set_enabled(dmd_pio, dmd_sm, false);
     // clear the interrupt for FRAME_START_IRQ 5 in the pio
     dmd_pio->irq = (1u << 5);
@@ -666,8 +668,9 @@ void dmd_dma_handler() {
 
   // Used for Data East 128x16 to correctly align 64x16 + 64x16.
   // Also stores initial data in the hidden part of framebuf.
+  // Plane 0 is the newest side, plane 1 the other side from plane history.
   int16_t diff_x16 = 0;
-  uint16_t offset_x16 = 511;
+  uint16_t offset_x16 = x16_right_side ? 519 : 511;
 
   // Fix byte order within the buffer
   uint32_t *planebuf = (uint32_t *)currentPlaneBuffer;
@@ -684,13 +687,15 @@ void dmd_dma_handler() {
   uint32_t *framebuf = (uint32_t *)processingbuf;
 
   bool source_shiftplanesatmerge = (source_mergeplanes == MERGEPLANES_ADDSHIFT);
+  uint16_t source_planestomerge =
+      (source_mergeplanes == MERGEPLANES_NONE) ? 1 : source_planesperframe;
 
   planebuf = (uint32_t *)currentPlaneBuffer;
   // px represents a group of pixels stored in a double word. 8 pixels of 4bit
   // or 16 pixels of 2bit depth.
   for (int px = 0; px < source_dwordsperplane; px++) {
     uint32_t pixval = 0;
-    for (int plane = 0; plane < source_planesperframe; plane++) {
+    for (int plane = 0; plane < source_planestomerge; plane++) {
       uint32_t v = planebuf[offset[plane] + px];
       if (source_shiftplanesatmerge) {
         if (dmd_type == DMD_SPIKE1) {
@@ -783,6 +788,8 @@ void dmd_dma_handler() {
           if (px == ((source_dwordsperplane / 2) - 1)) {
             diff_x16 -= 8;  // immediately decrement once -> select correct row
             diff_x16 *= -1;
+            // plane history holds the left side if the newest is the right
+            if (x16_right_side) offset_x16 = 503;
           }
         }
       }
@@ -912,6 +919,10 @@ void dmd_dma_handler() {
   dma_hw->sniff_data = 0xFFFFFFFF;  // always clean after sniffing!
 
   switch_buffers();
+
+  if (dmd_type == DMD_DE_X16_V1 || dmd_type == DMD_DE_X16_V2) {
+    x16_right_side = !x16_right_side;
+  }
 
   if (frame_crc != crc_previous_frame) {
     crc_previous_frame = frame_crc;
@@ -1132,10 +1143,11 @@ bool dmdreader_init(bool return_on_no_detection) {
       source_height = 32; // is actually 16, but we process as 32
       source_bitsperpixel = 4;  // recorded as 4bpp in the pio
       target_bitsperpixel = 2;  // max pixel value is 3
-      // in DE-Sega, there's only one plane,
-      // containg one MSB row followed by one LSB row and so on
-      source_planesperframe = 1;
-      source_planehistoryperframe = 0;
+      // in DE 128x16, there's one plane per side (left and right),
+      // containg one MSB row followed by one LSB row and so on.
+      // The previous side is kept as plane history.
+      source_planesperframe = 2;
+      source_planehistoryperframe = 1;
       source_lineoversampling = LINEOVERSAMPLING_2X;
       source_mergeplanes = MERGEPLANES_NONE;
       break;
@@ -1165,10 +1177,11 @@ bool dmdreader_init(bool return_on_no_detection) {
       source_height = 32; // is actually 16, but we process as 32
       source_bitsperpixel = 4;  // recorded as 4bpp in the pio
       target_bitsperpixel = 2;  // max pixvalues are 0, 1, 2, 3
-      // in DE-Sega, there's only one plane,
-      // containg one MSB row followed by one LSB row and so on
-      source_planesperframe = 1;
-      source_planehistoryperframe = 0;
+      // in DE 128x16, there's one plane per side (left and right),
+      // containg one MSB row followed by one LSB row and so on.
+      // The previous side is kept as plane history.
+      source_planesperframe = 2;
+      source_planehistoryperframe = 1;
       source_lineoversampling = LINEOVERSAMPLING_2X;
       source_mergeplanes = MERGEPLANES_NONE;
       break;
@@ -1490,9 +1503,12 @@ bool dmdreader_init(bool return_on_no_detection) {
 
   // Read a 128x16 frame but process as 128x32, so, change the number of
   // transfers at this stage to trigger a dma transfer at the right time.
+  // Every DMA transfer receives one side (half of the 128x16 frame).
   if (dmd_type == DMD_DE_X16_V1 || dmd_type == DMD_DE_X16_V2) {
-      source_dwordsperframe /= 2;
+      source_dwordsperframe /= 4;
       source_dwordsperplane /= 2;
+      source_bytesperplane /= 2;
+      x16_right_side = false;
   }
 
   // DMA for DMD reader
