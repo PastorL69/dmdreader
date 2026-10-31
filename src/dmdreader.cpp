@@ -1356,14 +1356,12 @@ bool dmdreader_init(bool return_on_no_detection) {
       dmdreader_programs_init(
           &dmd_reader_sleic_v1_program,
           dmd_reader_sleic_v1_program_get_default_config,
-          &dmd_framedetect_sleic_v1_program,
-          dmd_framedetect_sleic_v1_program_get_default_config, input_pins, 1,
+          &dmd_framedetect_generic_program,
+          dmd_framedetect_generic_program_get_default_config, input_pins, 1,
           0, SDATA);
 
       // load 127 directly to TX fifo
       pio_sm_put(dmd_pio, dmd_sm, 127);
-      // load 6144 delay cycles directly to TX fifo
-      // pio_sm_put(frame_pio, frame_sm, 6144);
 
       source_width = 128;
       source_height = 32;
@@ -1372,7 +1370,7 @@ bool dmdreader_init(bool return_on_no_detection) {
       source_planesperframe = 2;
       source_planehistoryperframe = 1;
       source_lineoversampling = LINEOVERSAMPLING_NONE;
-      source_mergeplanes = MERGEPLANES_ADDSHIFT;
+      source_mergeplanes = MERGEPLANES_ADD;
       break;
     }    
 

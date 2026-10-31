@@ -196,18 +196,31 @@ legit_dot:
     wait irq START_READING_IRQ
 
 row_loop:
-    set x, 5           ; load number of dots to skip (6)
+    set x, 5               ; load number of dots to skip (6)
 dot_skip_loop:
-    wait 0 gpio DOTCLK ; no DOTCLK period or faling edge of the previous
+    wait 0 gpio DOTCLK     ; no DOTCLK period or faling edge of the previous
     wait 1 gpio DOTCLK
-    jmp x-- dot_skip_loop       ; skip 6 dots
+    jmp x-- dot_skip_loop  ; skip 6 dots
 
-    mov x, osr         ; load number of pixels to read (128)
-dot_read_loop:
+    mov x, osr             ; load number of pixels to read (128)
+
+check_dot:
     wait 0 gpio DOTCLK ; no DOTCLK period or faling edge of the previous
-    in null 1          ; left padding three 0 to the output as CAPCOM is 4bit/px
-    wait 1 gpio DOTCLK ; raising edge
+    jmp pin msb_dot    ; Is DE high?
+    jmp lsb_dot        ; DE is low -> LSB dot
+
+msb_dot:
+    wait 1 gpio DOTCLK ; rising edge
     in pins 1          ; read 1 bit pin data
-    jmp x-- dot_read_loop
+    in null 1          ; padding 0 to the output as Sleic is 2bit/px
+    jmp end
+
+lsb_dot:
+    wait 1 gpio DOTCLK ; raising edge
+    in null 1          ; padding 0 to the output as Sleic is 2bit/px
+    in pins 1          ; read 1 bit pin data
+
+end:
+    jmp x-- check_dot
     jmp y-- row_loop
 .wrap
