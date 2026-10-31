@@ -408,7 +408,12 @@ DmdType detect_dmd() {
              (rclk < 4400) && (rdata > 125) && (rdata < 140)) {
     return DMD_SPINBALL;
 
-    // Sleic -> DOTCLK: 599000 | RCLK: 4700 | RDATA: 145
+    // Sleic V1 -> DOTCLK: 352000 | RCLK: 2625 | RDATA: 80
+  } else if ((dotclk > 330000) && (dotclk < 375000) && (rclk > 2550) &&
+             (rclk < 2700) && (rdata > 75) && (rdata < 85)) {
+    return DMD_SLEIC;
+
+    // Sleic V2 -> DOTCLK: 599000 | RCLK: 4700 | RDATA: 145
   } else if ((dotclk > 570000) && (dotclk < 630000) && (rclk > 4550) &&
              (rclk < 4850) && (rdata > 135) && (rdata < 155)) {
     return DMD_SLEIC;
