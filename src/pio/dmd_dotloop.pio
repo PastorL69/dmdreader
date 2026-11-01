@@ -206,7 +206,7 @@ dot_skip_loop:
 
 check_row:
     jmp pin msb_row    ; Is DE high?
-    jmp lsb_row        ; DE is low -> LSB dot
+    jmp lsb_row        ; DE is low -> LSB
 
 msb_row:
     wait 0 gpio DOTCLK ; no DOTCLK period or faling edge of the previous
